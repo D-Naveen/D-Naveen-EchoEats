@@ -19,8 +19,90 @@ RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
 
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
+_db_initialized = False
+
+def ensure_db_tables():
+    global _db_initialized
+    if _db_initialized:
+        return
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS FoodItems (
+                    FoodID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    FoodName TEXT NOT NULL,
+                    Description TEXT,
+                    Price REAL NOT NULL,
+                    Category TEXT,
+                    ImageName TEXT NOT NULL,
+                    IsAvailable INTEGER DEFAULT 1,
+                    Rating REAL,
+                    DateAdded TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    Quantity INTEGER DEFAULT 0,
+                    Stock INTEGER DEFAULT 0
+                );
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS orders (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    order_id TEXT NOT NULL UNIQUE,
+                    razorpay_order_id TEXT,
+                    payment_id TEXT,
+                    amount REAL NOT NULL,
+                    currency TEXT DEFAULT 'INR',
+                    payment_method TEXT,
+                    status TEXT DEFAULT 'pending',
+                    items TEXT,
+                    customer_details TEXT,
+                    signature TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS session_carts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id TEXT NOT NULL,
+                    food_id INTEGER NOT NULL,
+                    quantity INTEGER DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT NOT NULL UNIQUE,
+                    password TEXT NOT NULL,
+                    is_logged_in INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            cursor.execute("SELECT COUNT(*) FROM FoodItems")
+            if cursor.fetchone()[0] == 0:
+                cursor.execute("""
+                    INSERT INTO FoodItems (FoodID, FoodName, Description, Price, Category, ImageName, IsAvailable, Rating, Quantity, Stock)
+                    VALUES
+                    (1, 'Margherita Pizza', 'Classic cheese and tomato pizza', 1.00, 'Pizza', '01_Margherita.jpeg', 1, 4.5, 0, 50),
+                    (2, 'Farmhouse Pizza', 'Loaded with veggies and cheese', 249.00, 'Pizza', '02_Farmhouse.jpeg', 1, 4.6, 0, 40),
+                    (3, 'Pepperoni Pizza', 'Pepperoni slices with mozzarella cheese', 299.00, 'Pizza', '03_Pepperoni.jpeg', 1, 4.7, 0, 30),
+                    (4, 'Veggie Burger', 'Fresh veggies and sauces', 149.00, 'Burger', '04_VeggieBurger.jpeg', 1, 4.3, 0, 30),
+                    (5, 'Chicken Burger', 'Juicy chicken patty with mayo', 169.00, 'Burger', '05_ChickenBurger.jpeg', 1, 4.4, 0, 25),
+                    (6, 'Cheese Burst Burger', 'Cheese-filled patty', 179.00, 'Burger', '06_CheeseBurger.jpeg', 1, 4.5, 0, 20),
+                    (7, 'Chicken Biryani', 'Aromatic chicken biryani', 249.00, 'Main Course', '07_ChickenBiryani.jpeg', 1, 4.7, 0, 45),
+                    (8, 'South Indian Thali', 'Traditional South Indian full meals', 199.00, 'Main Course', '08_Thali.jpeg', 1, 4.4, 0, 35),
+                    (9, 'Masala Dosa', 'Crispy dosa with masala filling', 99.00, 'Snacks', '09_MasalaDosa.jpeg', 1, 4.5, 0, 60),
+                    (10, 'Obbattu', 'Sweet South Indian dessert (Holige)', 79.00, 'Dessert', '10_Obbattu.jpeg', 1, 4.6, 0, 40),
+                    (11, 'Vangibath', 'Brinjal rice with masala', 129.00, 'Main Course', '11_VangiBath.jpeg', 1, 4.3, 0, 50);
+                """)
+        _db_initialized = True
+    except Exception:
+        pass
+
 @csrf_exempt
 def get_food_items(request):
+    ensure_db_tables()
     if request.method == "GET":
         try:
             with connection.cursor() as cursor:
