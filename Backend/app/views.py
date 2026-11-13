@@ -103,7 +103,7 @@ def ensure_db_tables():
 @csrf_exempt
 def get_food_items(request):
     ensure_db_tables()
-    if request.method == "GET":
+    if request.method in ("GET", "HEAD"):
         try:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT * FROM FoodItems")
@@ -115,6 +115,7 @@ def get_food_items(request):
             return JsonResponse(food_items, safe=False)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def process_voice(request):
@@ -261,6 +262,7 @@ Return ONLY the JSON object, no additional text.
         except Exception as e:
             print("Error:", e)
             return JsonResponse({"error": "Failed to process voice command"}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def update_quantity(request, id):
@@ -296,6 +298,7 @@ def update_quantity(request, id):
                 "error": "Server error",
                 "details": str(e)
             }, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def login_user(request):
@@ -337,6 +340,7 @@ def login_user(request):
         except Exception as e:
             print("Login error:", e)
             return JsonResponse({"error": "Server error"}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def signup_user(request):
@@ -373,6 +377,7 @@ def signup_user(request):
         except Exception as e:
             print("Signup error:", e)
             return JsonResponse({"error": "Server error"}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def logout_user(request, user_id):
@@ -389,6 +394,7 @@ def logout_user(request, user_id):
         except Exception as e:
             print("Logout error:", e)
             return JsonResponse({"error": "Server error"}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def create_order(request):
@@ -457,6 +463,7 @@ def create_order(request):
         except Exception as e:
             print("Create order error:", e)
             return JsonResponse({"success": False, "error": str(e)}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def verify_payment(request):
@@ -498,10 +505,11 @@ def verify_payment(request):
         except Exception as e:
             print("Payment verification error:", e)
             return JsonResponse({"error": "Server error", "details": str(e)}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def get_user_orders(request, user_id):
-    if request.method == "GET":
+    if request.method in ("GET", "HEAD"):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -544,6 +552,7 @@ def get_user_orders(request, user_id):
         except Exception as e:
             print("Error fetching orders:", e)
             return JsonResponse({"error": "Server error", "details": str(e)}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def update_order_status(request, order_id):
@@ -563,6 +572,7 @@ def update_order_status(request, order_id):
         except Exception as e:
             print("Error updating order status:", e)
             return JsonResponse({"error": "Server error"}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def session_cart_operations(request):
@@ -596,10 +606,11 @@ def session_cart_operations(request):
         except Exception as e:
             print("Session cart error:", e)
             return JsonResponse({"error": "Server error"}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def get_session_cart(request, session_id):
-    if request.method == "GET":
+    if request.method in ("GET", "HEAD"):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -622,6 +633,7 @@ def get_session_cart(request, session_id):
         except Exception as e:
             print("Error fetching session cart:", e)
             return JsonResponse({"error": "Server error"}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 def clear_session_cart(request, session_id):
@@ -635,3 +647,4 @@ def clear_session_cart(request, session_id):
         except Exception as e:
             print("Error clearing session cart:", e)
             return JsonResponse({"error": "Server error"}, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)

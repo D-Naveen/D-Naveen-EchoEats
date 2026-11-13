@@ -108,24 +108,33 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DB_ENGINE = os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3')
+db_engine_env = os.environ.get('DB_ENGINE', '').lower()
+db_host_env = os.environ.get('DB_HOST', '').strip()
 
-if DB_ENGINE == 'django.db.backends.sqlite3':
+# Use remote MySQL only if explicitly requested AND host is a real remote host (not localhost/127.0.0.1).
+# On cloud platforms like Render, localhost has no running MySQL instance, so SQLite is used safely.
+is_remote_mysql = (
+    'mysql' in db_engine_env
+    and db_host_env
+    and db_host_env.lower() not in ('localhost', '127.0.0.1')
+)
+
+if is_remote_mysql:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.environ.get('DB_NAME', 'voiceassistant'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': db_host_env,
+            'USER': os.environ.get('DB_USER', 'root'),
+            'PORT': os.environ.get('DB_PORT', '3306'),
         }
     }
 else:
     DATABASES = {
         'default': {
-            'ENGINE': DB_ENGINE,
-            'NAME': os.environ.get('DB_NAME', 'voiceassistant'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'USER': os.environ.get('DB_USER', 'root'),
-            'PORT': os.environ.get('DB_PORT', '3307'),
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
